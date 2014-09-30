@@ -141,7 +141,7 @@ int line_to_page( char *line, struct page *current, int line_length )
 {
   if( (current->location + line_length) > current->size )
     {
-      current->size += ALLOC_SIZE;
+      current->size += ((current->location + line_length - current->size )/ALLOC_SIZE +1)*ALLOC_SIZE;
       current->page_buffer = (char *) realloc( current->page_buffer, sizeof( char ) * current->size );
     }
 
@@ -218,7 +218,7 @@ char *get_boundary( char *in_buffer, size_t buffer_size )
 	char *seeker = in_buffer;
 	char *end_seeker = NULL;
 	char *boundary = NULL;
-	const char *target = "boundary=\"";
+	const char *target = "boundary=";
 	char *line_end = NULL;
 	size_t boundary_len;
 
@@ -227,11 +227,13 @@ char *get_boundary( char *in_buffer, size_t buffer_size )
 		if( !strncmp( seeker, target, strlen( target ) ) )
 		{
 			seeker += strlen( target );
+			if(seeker[0] == '\"')
+				seeker++;
 			end_seeker = seeker;
 
 			while( end_seeker - in_buffer < buffer_size )
 			{
-				if( *end_seeker == '"' )
+				if( *end_seeker == '"' || *end_seeker == '\n' || *end_seeker == '\r' )
 				{
 					break;
 				}
@@ -359,7 +361,7 @@ struct page *buffer_section( char *section_start, char *section_end )
 struct page* buffer_to_pages( char *in_buffer, size_t buffer_size )
 {
   char *boundary = NULL;
-  char *section_start, *section_end = NULL;
+  char *section_start = NULL, *section_end = NULL;
   char *line_start;
   struct page *page_head = NULL;
   struct page *current_page = NULL;
