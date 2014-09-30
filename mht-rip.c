@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Logan Owen;
+/* Copyright (C) 2014 Logan Owen;
 All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
 
 mht-rip converts a mhtml (or mht) file to a series of binary and
-plain text files.  Allows reading of the images that were in the 
+plain text files.  Allows reading of the images that were in the
 mhtml file.
 
 usage: mht-rip INPUTFILE */
@@ -27,8 +27,6 @@ usage: mht-rip INPUTFILE */
 #include <stdio.h>
 #include <string.h>
 
-
-#define ALLOC_SIZE 10000
 
 #define F_PREPARE 15
 #define F_READ 20
@@ -48,7 +46,7 @@ struct page
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
 void decodeblock( unsigned char in[4], unsigned char out[3] )
-{   
+{
     out[ 0 ] = (unsigned char ) (in[0] << 2 | in[1] >> 4);
     out[ 1 ] = (unsigned char ) (in[1] << 4 | in[2] >> 2);
     out[ 2 ] = (unsigned char ) (((in[2] << 6) & 0xc0) | in[3]);
@@ -72,7 +70,7 @@ size_t decode_buffer( char *line )
       v = (unsigned char) ((v < 43 || v > 122 ) ? 0 : cd64[ v - 43 ]);
       if( v )
       {
-        v = (unsigned char) ((v == '$') ? 0 : v - 61);
+	v = (unsigned char) ((v == '$') ? 0 : v - 61);
       }
       line[i] = v;
       i++;
@@ -81,43 +79,43 @@ size_t decode_buffer( char *line )
   j = 0;
   i = 0;
   len = 0;
-  
+
   while( j < in_length )
     {
       v = line[j];
-      
+
       if( v != 0 )
 	  {
-        in_block[ i ] = (unsigned char) (v - 1);
-        i++;
-        len++;
+	in_block[ i ] = (unsigned char) (v - 1);
+	i++;
+	len++;
 	  }
 
       if( j == in_length - 1)
 	  {
-        while( i < 4 )
+	while( i < 4 )
 	    {
 	      in_block[ i ] = 0;
-          i++;
+	  i++;
 	    }
 
 	  }
 
       if( i == 4 )
       {
-          decodeblock( in_block, out_block );
-          for( i = 0; i < len - 1; i++ )
-          {
-            *writer = out_block[ i ];
-            writer++;
-            out_length++;
-          }   
-          i = 0;
-          len = 0;
+	  decodeblock( in_block, out_block );
+	  for( i = 0; i < len - 1; i++ )
+	  {
+	    *writer = out_block[ i ];
+	    writer++;
+	    out_length++;
+	  }
+	  i = 0;
+	  len = 0;
       }
       j++;
     }
-  
+
   return out_length;
 }
 
@@ -135,13 +133,13 @@ struct page *new_page()
 
 
   return new_page;
-} 
+}
 
 int line_to_page( char *line, struct page *current, int line_length )
 {
   if( (current->location + line_length) > current->size )
     {
-      current->size += ((current->location + line_length - current->size )/ALLOC_SIZE +1)*ALLOC_SIZE;
+      current->size += (current->location + line_length - current->size);
       current->page_buffer = (char *) realloc( current->page_buffer, sizeof( char ) * current->size );
     }
 
@@ -156,7 +154,7 @@ int page_to_file( struct page *current, int o_count )
 
   if( current->location > 0 )
     {
-      sprintf( filename, "%d.file", o_count );  
+      sprintf( filename, "%d.file", o_count );
 
       o_file = fopen( filename, "wb" );
 
@@ -178,7 +176,7 @@ char *get_end_of_line( char *in_buffer, size_t buffer_size, char *line )
 		{
 			return seeker;
 		}
-        
+
 		if( (*seeker == '\r' && *(seeker + 1) == '\n') || (*seeker == '\n' && *(seeker + 1) == '\r') )
 		{
 			return seeker + 1;
@@ -349,12 +347,12 @@ struct page *buffer_section( char *section_start, char *section_end )
 		}
 		line_start = get_start_of_line( section_start, buffer_size, line_start );
 	}
-	
+
 	if( line )
 	{
 		free( line );
 	}
-	
+
 	return section_page;
 }
 
@@ -387,7 +385,7 @@ struct page* buffer_to_pages( char *in_buffer, size_t buffer_size )
 		  else
 		  {
 			  section_end = line_start;
-			  
+
 			  new_page = buffer_section( section_start, section_end );
 			  if( !page_head )
 			  {
@@ -419,7 +417,7 @@ int main( int argc, char *argv[] )
 
   size_t size;
   int o_count = 0;
-  
+
   if( argc != 2 )
     {
       printf( "Incorrect options\nmht-rip INPUTFILE\n" );
@@ -444,7 +442,7 @@ int main( int argc, char *argv[] )
   fclose( input );
 
   current = buffer_to_pages( in_buffer, size );
-  
+
   free( in_buffer );
 
   while( current )
